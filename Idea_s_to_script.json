@@ -1,0 +1,638 @@
+{
+  "name": "Idea's to script",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1eX7XACVZV16f1CE72YHsXCq6o6uHfVOl_ps8Nj3BcVU",
+          "mode": "list",
+          "cachedResultName": "content creation ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eX7XACVZV16f1CE72YHsXCq6o6uHfVOl_ps8Nj3BcVU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eX7XACVZV16f1CE72YHsXCq6o6uHfVOl_ps8Nj3BcVU/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "80bf4fa9-b9c5-4a33-bfb1-196f2e855d9f",
+      "name": "Google Sheets Trigger",
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "ftElEbWKtqdoZnY3",
+          "name": "Google Sheets Trigger account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "sendBody": true,
+        "specifyBody": "=json",
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "jsonBody": "={\n\"api_key\": \"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\",\n\"query\": \"{{ $json['Idea\\'s'] }}\",\n\"search_depth\": \"advanced\",\n\"include_answer\": true,\n\"include_raw_content\": true,\n\"max_results\": 3\n}\n",
+        "options": {}
+      },
+      "id": "d18f0b37-d567-4261-8867-2162764d4c50",
+      "name": "Search Internet",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Modified Code node to extract all content from Tavily API response\n// Get the API response from the HTTP Request\nconst apiResponse = $json;\n\n// Initialize an array to hold all content\nlet allContent = [];\n\n// Extract the answer if it exists\nif (apiResponse.answer) {\n  allContent.push(apiResponse.answer);\n}\n\n// Extract content from all results\nif (apiResponse.results && Array.isArray(apiResponse.results)) {\n  // Get content from each result\n  const resultContents = apiResponse.results\n    .map(result => result.content)\n    .filter(Boolean); // Remove empty/null entries\n  \n  // Add all result contents to our collection\n  allContent = allContent.concat(resultContents);\n}\n\n// Join all content pieces\nconst combined = allContent.join(\"\\n\\n\");\n\n// Clean the content\nconst cleaned = combined\n  .replace(/<\\/?[^>]+(>|$)/g, \"\")  // remove HTML\n  .replace(/\\s+/g, \" \")            // collapse whitespace\n  .trim();\n\n// Return the cleaned data\nreturn [{ \n  json: {\n    clean_data: cleaned\n  }\n}];\n\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        20
+      ],
+      "id": "6d71e658-c733-4d8e-8a41-212a3ee133e1",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert short-form video scriptwriter specializing in creating highly engaging, attention-grabbing content optimized for platforms like YouTube Shorts.\n\nYour objective is to generate a compelling video script, approximately 20 seconds in total length, based strictly and solely on the input content provided below. Do not add any external information, opinions, or details not explicitly present in the input. Do not invent anything.\n\nYour script should be written as a smooth, high-energy narrative, ready to be used as voiceover or subtitles. Do not include timestamps, scene directions, or visual suggestions. Do not add phrases like “link in the description” or call-to-action statements unless they are present in the input content.\n\nFollow this structure:\n\nKiller Hook (~first 3 seconds): Start immediately with a bold, provocative statement or intriguing question that grabs attention and hooks the viewer instantly.\n\nEngaging Body (~next 15-17 seconds): Transition into a dynamic, informative explanation that clearly communicates the core message using only the provided input content. Maintain a natural flow — no bullet points, no lists, no enumeration (avoid “First,” “Then,” “Finally,” etc.).\n\n",
+        "messages": {
+          "messageValues": [
+            {
+              "type": "HumanMessagePromptTemplate",
+              "message": "={{ $json.clean_data }}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        0,
+        300
+      ],
+      "id": "fa792c6b-27b0-44e0-a0a4-b4f9cfdcb57d",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        400,
+        560
+      ],
+      "id": "2c63eaee-b577-4085-b220-2b049478741d",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "eDRnK0ZqtuqesGCD",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1eX7XACVZV16f1CE72YHsXCq6o6uHfVOl_ps8Nj3BcVU",
+          "mode": "list",
+          "cachedResultName": "content creation ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eX7XACVZV16f1CE72YHsXCq6o6uHfVOl_ps8Nj3BcVU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eX7XACVZV16f1CE72YHsXCq6o6uHfVOl_ps8Nj3BcVU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Generated Script": "={{ $json['Generated Script'] }}",
+            "Idea's": "={{ $json['Idea\\'s'] }}",
+            "Approval Status": "={{ $json['Approval Status'] }}"
+          },
+          "matchingColumns": [
+            "Idea's"
+          ],
+          "schema": [
+            {
+              "id": "Idea's",
+              "displayName": "Idea's",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Generated Script",
+              "displayName": "Generated Script",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Approval Status",
+              "displayName": "Approval Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1200,
+        260
+      ],
+      "id": "5d4af02f-14a1-4b92-85f7-fa7cb8ced1ff",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "lkMgKMWsG8eHs6r1",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    // Use the field name containing the original idea text\n    \"Idea's\": $json[\"Idea's\"],\n\n    // Use the field name containing the script generated by the LLM\n    \"Generated Script\": $json.text || $json.response || \"No script found\",\n\n    // Set the status for the Google Sheet update\n    \"Approval Status\": \"Pending\"\n  }\n}];\n\n\n\n\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        260
+      ],
+      "id": "d758c4a8-c4b9-4c60-a15a-466e1dbdde2f",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "amount": 20
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1460,
+        260
+      ],
+      "id": "a0aa53d5-ae68-4680-a6a5-05db37ff464f",
+      "name": "Wait",
+      "webhookId": "337b37b2-3d9d-412d-8918-73c650f6800f"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1eX7XACVZV16f1CE72YHsXCq6o6uHfVOl_ps8Nj3BcVU",
+          "mode": "list",
+          "cachedResultName": "content creation ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eX7XACVZV16f1CE72YHsXCq6o6uHfVOl_ps8Nj3BcVU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eX7XACVZV16f1CE72YHsXCq6o6uHfVOl_ps8Nj3BcVU/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1700,
+        260
+      ],
+      "id": "6d1c2f93-2b4c-405b-95c3-0d5fd21a8a6b",
+      "name": "Google Sheets1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "lkMgKMWsG8eHs6r1",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "33aeca1e-ce82-46b8-b36b-1fc2d224eb8c",
+              "leftValue": "={{ $json['Approval Status'].trim() }}",
+              "rightValue": "=Approved",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        540
+      ],
+      "id": "172ce72a-4629-45fd-91e7-a601f18f15cc",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "= https://api.heygen.com/v2/video/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "=MjNmNDc2ZTJiMDJmNDNhNTkwMTNlZWU3YzI5NDQ0NjctMTc0NjI3MzgwMg=="
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"video_inputs\": [\n    {\n      \"character\": {\n        \"type\": \"avatar\",\n        \"avatar_id\": \"c7b099340f4c45059f7c698db644b160\", \n        \"avatar_style\": \"normal\"\n      },\n      \"voice\": {\n        \"type\": \"text\",\n        \"input_text\": \"{{ $json['Generated Script'] }}\",\n        \"voice_id\": \"d2f4f24783d04e22ab49ee8fdc3715e0\", \n        \"speed\": 1.1\n      }\n    }\n  ],\n  \"dimension\": {\n    \"width\": 1280,\n    \"height\": 720\n  }\n}\n\n\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1140,
+        500
+      ],
+      "id": "9c4c3477-06f2-48ed-be26-d6c8275b636c",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        700
+      ],
+      "id": "b6a34476-3396-43ef-95da-126988cb3c75",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "amount": 8,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1360,
+        500
+      ],
+      "id": "bfee38d8-71da-4920-8a6b-f283375d0afb",
+      "name": "Wait1",
+      "webhookId": "ef04dfb8-3958-49d7-832d-7a803171c7f0"
+    },
+    {
+      "parameters": {
+        "url": "https://api.heygen.com/v1/video_status.get",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "video_id",
+              "value": "442a79c0d3874f708ab1b21cb6137b18"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "MjNmNDc2ZTJiMDJmNDNhNTkwMTNlZWU3YzI5NDQ0NjctMTc0NjI3MzgwMg=="
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1520,
+        500
+      ],
+      "id": "7fd46fcb-5e3d-4897-8927-cbbe346a05f4",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.data.video_url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1700,
+        500
+      ],
+      "id": "31963851-070b-4f85-9674-395b16e7a48d",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().filter(item => item.json.Status === \"Processing\");"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "id": "fb8f4d4e-465c-4bfa-ab56-302b7a71c7f2",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true
+        }
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        560,
+        280
+      ],
+      "id": "aad74c74-b8c7-4c4d-bdb2-29025b356d5b",
+      "name": "Merge",
+      "alwaysOutputData": false
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Internet": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets1": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Search Internet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "7eba7675-ebb5-4f4b-99fb-409c8e748107",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7fc9a6420de6264d6dc424a5d572e346072e4b4fc204cb44f2e0a337d104ff85"
+  },
+  "id": "CHnodB4bixXjxl9E",
+  "tags": []
+}
